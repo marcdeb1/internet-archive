@@ -1,15 +1,15 @@
 import requests
 import json
-from urllib.parse import urlencode, quote_plus
 import os
 
 
 class LBRYObject:
     path = None
     document = None
-    bid = 0.001
+    bid = 0.0001
     daemon_url = 'http://localhost:5279/lbryapi/'
     media_dir = 'media/'
+    channel_name = '@internet-archive-movies'
 
     def __init__(self, path, document):
         self.path = path
@@ -25,6 +25,10 @@ class LBRYObject:
         params['license'] = 'LBRY Inc.'
         params['bid'] = self.bid
         params['file_path'] = os.path.abspath(self.media_dir + self.path)
+
+        if self.channel_name:
+            params['channel_name'] = self.channel_name
+
         data['params'] = params
         return json.dumps(data)
 
@@ -38,7 +42,8 @@ class LBRYObject:
         else:
             return r.content
 
-    def add_params(self, settings, metadata):
+    @staticmethod
+    def add_params(settings, metadata):
         params = dict()
         for key, value in settings.items():
             if value not in metadata:
