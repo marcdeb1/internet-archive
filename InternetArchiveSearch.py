@@ -1,5 +1,5 @@
 import requests
-from .settings import *
+from settings import *
 from urllib.parse import urlencode, quote_plus
 import os
 
@@ -9,7 +9,7 @@ class InternetArchiveSearch:
     base_url = "https://archive.org/advancedsearch.php?"
     output_format = "json"
     fields = ["avg_rating", "backup_location", "btih", "call_number", "collection", "contributor", "coverage", "creator", "date", "description", "downloads", "external-identifier", "foldoutcount", "format", "headerImage", "identifier", "imagecount", "language", "licenseurl", "mediatype", "members", "month", "num_reviews", "oai_updatedate", "publicdate", "publisher", "related-external-id", "reviewdate", "rights", "scanningcentre", "source", "stripped_tags", "subject", "title", "type", "volume", "week", "year"]
-    number_results = 1000
+    number_results = 10
     start = 0
     query = "mediatype:(movies )"
     allowed_formats = ['MPEG2', 'MPEG4', 'h.264', 'MPEG2-TS', 'Windows Media']
@@ -26,7 +26,7 @@ class InternetArchiveSearch:
 
     def get_identifiers(self):
         num_found = self.get_num_found()
-        self.number_results = num_found
+        self.number_results = self.number_results
         self.fields = ['identifier']
         documents = self.search()
         return documents

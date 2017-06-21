@@ -1,7 +1,8 @@
 import requests
 import json
 import os
-from .settings import *
+from slugify import slugify
+from settings import *
 
 
 class LBRYObject:
@@ -15,17 +16,22 @@ class LBRYObject:
     def build_data(self):
         data = dict()
         data['method'] = 'publish'
-        metadata = self.document['metadata']
-        settings = {'name': 'identifier', 'title': 'title', 'description': 'description', 'author': 'creator', 'language': 'language'}
-        params = self.add_params(settings, metadata)
-        params['nsfw'] = False
-        params['license'] = 'LBRY Inc.'
-        params['bid'] = BID
+        document_metadata = self.document['metadata']
+        params = dict()
+        params['name'] = slugify(document_metadata['identifier'])
         params['file_path'] = os.path.abspath(MEDIA_DIR + self.path)
+        params['bid'] = BID
+        metadata = dict()
+        settings = {'title': 'title', 'description': 'description', 'author': 'creator'}
+        metadata = self.add_params(settings, document_metadata)
+        metadata['nsfw'] = False
+        metadata['license'] = 'LBRY Inc'
+        metadata['language'] = 'en'
 
         if CHANNEL_NAME:
             params['channel_name'] = CHANNEL_NAME
 
+        params['metadata'] = metadata
         data['params'] = params
         return json.dumps(data)
 
