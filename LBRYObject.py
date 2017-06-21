@@ -22,10 +22,9 @@ class LBRYObject:
         params['file_path'] = os.path.abspath(MEDIA_DIR + self.path)
         params['bid'] = BID
         metadata = dict()
-        settings = {'title': 'title', 'description': 'description', 'author': 'creator'}
+        settings = {'title': 'title', 'description': 'description', 'author': 'creator', 'license_url': 'licenseurl'}
         metadata = self.add_params(settings, document_metadata)
         metadata['nsfw'] = False
-        metadata['license'] = 'LBRY Inc'
         metadata['language'] = 'en'
 
         if CHANNEL_NAME:
