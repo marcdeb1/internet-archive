@@ -1,2 +1,2 @@
 # internet-archive
-Extracting data from the Internet Archive
+Extracting data from the Internet Archive (http://archive.org)
