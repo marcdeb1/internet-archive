@@ -1,10 +1,11 @@
 import requests
+from .settings import *
 from urllib.parse import urlencode, quote_plus
 import os
 
 
 class InternetArchiveSearch:
-    header = "Accept: application/json"
+    headers = "Accept: application/json"
     base_url = "https://archive.org/advancedsearch.php?"
     output_format = "json"
     fields = ["avg_rating", "backup_location", "btih", "call_number", "collection", "contributor", "coverage", "creator", "date", "description", "downloads", "external-identifier", "foldoutcount", "format", "headerImage", "identifier", "imagecount", "language", "licenseurl", "mediatype", "members", "month", "num_reviews", "oai_updatedate", "publicdate", "publisher", "related-external-id", "reviewdate", "rights", "scanningcentre", "source", "stripped_tags", "subject", "title", "type", "volume", "week", "year"]
@@ -12,7 +13,6 @@ class InternetArchiveSearch:
     start = 0
     query = "mediatype:(movies )"
     allowed_formats = ['MPEG2', 'MPEG4', 'h.264', 'MPEG2-TS', 'Windows Media']
-    media_dir = 'media/'
 
     def build_query(self):
         params = dict()
@@ -85,7 +85,7 @@ class InternetArchiveSearch:
     def download_file(self, url):
         local_filename = url.split('/')[-1]
         r = requests.get(url, stream=True)
-        path = self.media_dir + local_filename
+        path = MEDIA_DIR + local_filename
         with open(path, 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
@@ -93,7 +93,7 @@ class InternetArchiveSearch:
         return local_filename
 
     def delete_file(self, filename):
-        path = self.media_dir + filename
+        path = MEDIA_DIR + filename
         os.remove(path)
         return filename
 
