@@ -2,6 +2,7 @@ import requests
 from settings import *
 from urllib.parse import urlencode, quote_plus
 import os
+import shutil
 
 
 class InternetArchiveSearch:
@@ -11,8 +12,9 @@ class InternetArchiveSearch:
     fields = ["avg_rating", "backup_location", "btih", "call_number", "collection", "contributor", "coverage", "creator", "date", "description", "downloads", "external-identifier", "foldoutcount", "format", "headerImage", "identifier", "imagecount", "language", "licenseurl", "mediatype", "members", "month", "num_reviews", "oai_updatedate", "publicdate", "publisher", "related-external-id", "reviewdate", "rights", "scanningcentre", "source", "stripped_tags", "subject", "title", "type", "volume", "week", "year"]
     number_results = 100
     start = 0
-    query = "mediatype:(movies )"
-    allowed_formats = ['MPEG2', 'MPEG4', 'h.264', 'MPEG2-TS', 'Windows Media']
+
+    def __init__(self, query):
+        self.query = query
 
     def build_query(self):
         params = dict()
@@ -26,7 +28,7 @@ class InternetArchiveSearch:
 
     def get_identifiers(self):
         num_found = self.get_num_found()
-        self.number_results = self.number_results
+        self.number_results = num_found
         self.fields = ['identifier']
         documents = self.search()
         return documents
@@ -40,6 +42,7 @@ class InternetArchiveSearch:
         if 'response' not in response_json:
             print("Response error")
         num_found = response_json['response']['numFound']
+        print(str(num_found) + " results found")
         return num_found
 
     def search(self):
@@ -77,19 +80,21 @@ class InternetArchiveSearch:
         dir = document['dir'] + '/'
         file_name = ""
         for file in document['files']:
-            if file['source'] == 'original' and file['format'] in self.allowed_formats:
+            if file['source'] == 'original' and file['format'] in ALLOWED_FORMATS:
                 file_name = file['name']
                 break
         return root + dir + quote_plus(file_name)
 
     def download_file(self, url):
         local_filename = url.split('/')[-1]
-        r = requests.get(url, stream=True)
         path = MEDIA_DIR + local_filename
-        with open(path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:
+        r = requests.get(url, stream=True)
+        if r.status_code == 200:
+            with open(path, 'wb') as f:
+                for chunk in r.iter_content(1024):
                     f.write(chunk)
+        else:
+            print("Request failed")
         return local_filename
 
     def delete_file(self, filename):

@@ -1,7 +1,9 @@
 from InternetArchiveSearch import *
 from LBRYObject import *
 
-ia = InternetArchiveSearch()
+query = "mediatype:(image ) AND collection:(BrooklynMuseum)"
+
+ia = InternetArchiveSearch(query=query)
 identifiers = ia.get_identifiers()
 transactions = list()
 
