@@ -51,5 +51,9 @@ class LBRYObject:
             if value not in metadata:
                 continue
             else:
-                params[key] = metadata[value]
+                attribute = metadata[value]
+                if isinstance(attribute, list):
+                    params[key] = ','.join(attribute)
+                else:
+                    params[key] = attribute
         return params
