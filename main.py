@@ -1,20 +1,21 @@
 from InternetArchiveSearch import *
 from LBRYObject import *
 
-query = "mediatype:(image ) AND collection:(BrooklynMuseum)"
 
-ia = InternetArchiveSearch(query=query)
-identifiers = ia.get_identifiers()
-transactions = list()
-
-for item in identifiers:
+def process_document(item, ia):
     identifier = item['identifier']
-    print(identifier)
-    document = ia.get_metadata(identifier)
-    url = ia.get_file_url(document)
-    f = ia.download_file(url)
-    lbry_object = LBRYObject(f, document)
+    content = ia.get_and_download_content(identifier)
+    lbry_object = LBRYObject(content)
+    print("Publishing " + str(identifier) + "...")
     transaction = lbry_object.publish()
-    transactions.append(transaction)
-    print(transaction)
+    print("Transaction : " + str(transaction) + '\n')
 
+
+def process_collection(collection_name, collection_type):
+    query = "collection:" + collection_name
+    ia = InternetArchiveSearch(query=query, file_type=collection_type)
+    documents = ia.get_identifiers()
+    for d in documents:
+        process_document(d, ia)
+
+process_collection("nationalmaritimemuseumflickr", 'IMAGE')
