@@ -18,4 +18,4 @@ def process_collection(collection_name, collection_type):
     for d in documents:
         process_document(d, ia)
 
-process_collection("nationalmaritimemuseumflickr", 'IMAGE')
+process_collection("earthdayimagegallery", 'IMAGE')

@@ -3,6 +3,7 @@ import json
 import os
 import string
 import random
+import lbry
 from slugify import slugify
 from settings import *
 
@@ -19,15 +20,10 @@ class LBRYObject:
         self.metadata = content['metadata']
 
     def build_data(self):
-        data = dict()
-        data['method'] = 'publish'
         params = dict()
         params['name'] = self.get_name()
         params['file_path'] = os.path.abspath(MEDIA_DIR + self.source_path)
-        if self.thumbnail_path:
-            params['thumbnail'] = os.path.abspath(THUMBNAIL_DIR + self.thumbnail_path)
         params['bid'] = BID
-        params['claim_address'] = self.get_wallet_address()
         if CHANNEL_NAME:
             params['channel_name'] = CHANNEL_NAME
 
@@ -35,10 +31,10 @@ class LBRYObject:
         metadata = self.add_params(settings, self.metadata)
         metadata['nsfw'] = False
         metadata['language'] = 'en'
-
+        if self.thumbnail_path:
+            metadata['thumbnail'] = os.path.abspath(THUMBNAIL_DIR + self.thumbnail_path)
         params['metadata'] = metadata
-        data['params'] = params
-        return json.dumps(data)
+        return params
 
     def get_name(self):
         name = str()
@@ -49,22 +45,9 @@ class LBRYObject:
 
     def publish(self):
         data = self.build_data()
-        r = requests.get(DAEMON_URL, data=data, headers=self.headers)
-        if r.status_code != 200:
-            print(r.content)
-            return False
-        else:
-            return r.content
-
-    def get_wallet_address(self):
-        data = dict()
-        data['method'] = 'wallet_unused_address'
-        r = requests.get(DAEMON_URL, data=json.dumps(data), headers=self.headers)
-        response_json = r.json()
-        if r.status_code == 200:
-            if 'result' in response_json:
-                return response_json["result"]
-        return False
+        r = lbry.publish(name=data["name"], bid=data["bid"], file_path=data["file_path"],
+                         channel_name=data["channel_name"], metadata=data["metadata"], headers=self.headers)
+        return r
 
     @staticmethod
     def add_params(settings, metadata):
