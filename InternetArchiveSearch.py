@@ -2,7 +2,10 @@ import requests
 from settings import *
 from urllib.parse import urlencode, quote_plus
 import os
-import shutil
+import string
+import json
+import random
+from Database import *
 
 
 class InternetArchiveSearch:
@@ -13,10 +16,12 @@ class InternetArchiveSearch:
     number_results = 100
     start = 0
     file_type = None
+    db = None
 
     def __init__(self, query, file_type):
         self.query = query
         self.file_type = file_type
+        self.db = Database(name=COLLECTION_NAME + '.db')
 
     def build_query(self):
         params = dict()
@@ -77,10 +82,16 @@ class InternetArchiveSearch:
         if 'metadata' not in document:
             print("Error - No metadata")
             return False
-        content['metadata'] = document['metadata']
+        content['metadata'] = json.dumps(document['metadata'])
+        content['name'] = self.get_name()
+        content['downloaded'] = True
+        content['published'] = False
+        content['identifier'] = identifier
+        self.db.store_item(content)
         return content
 
-    def get_server_url(self, document):
+    @staticmethod
+    def get_server_url(document):
         root = "http://" + document['d1']
         dir = document['dir'] + '/'
         return root + dir
@@ -94,7 +105,8 @@ class InternetArchiveSearch:
                 break
         return file_name
 
-    def get_thumbnail_file(self, document):
+    @staticmethod
+    def get_thumbnail_file(document):
         thumbnails = list()
         index = 0 # To avoid downloading first thumbnail
         if not 'files' in document:
@@ -145,6 +157,13 @@ class InternetArchiveSearch:
             print("Request failed")
         return filename
 
+    def get_name(self):
+        name = str()
+        if PREFIX:
+            name += PREFIX + '-'
+        name += self.random_string(NAME_SIZE)
+        return name
+
     def get_allowed_formats(self):
         if self.file_type == 'VIDEO':
             return ALLOWED_VIDEO_FORMATS
@@ -153,11 +172,11 @@ class InternetArchiveSearch:
         else:
             return False
 
-    def delete_file(self, filename):
-        path = MEDIA_DIR + filename
-        os.remove(path)
-        return filename
-
     def set_query(self, query):
         self.query = query
         return True
+
+    @staticmethod
+    def random_string(size):
+        alphabet = string.ascii_lowercase + string.digits
+        return ''.join(random.choice(alphabet) for _ in range(size))

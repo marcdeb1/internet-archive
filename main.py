@@ -1,14 +1,20 @@
 from InternetArchiveSearch import *
-from LBRYObject import *
+from LBRYUpload import *
+from Database import *
+from settings import *
 
 
 def process_document(item, ia):
     identifier = item['identifier']
-    content = ia.get_and_download_content(identifier)
-    lbry_object = LBRYObject(content)
-    print("Publishing " + str(identifier) + "...")
-    transaction = lbry_object.publish()
-    print("Transaction : " + str(transaction) + '\n')
+    db = Database(name=COLLECTION_NAME + '.db')
+    lbry = LBRYUpload()
+    content = db.get_item(identifier=identifier)
+    if not content:
+        content = ia.get_and_download_content(identifier)
+    if not content['published']:
+            lbry.publish(content)
+    else:
+        print('Content already published !\n')
 
 
 def process_collection(collection_name, collection_type):
@@ -18,4 +24,4 @@ def process_collection(collection_name, collection_type):
     for d in documents:
         process_document(d, ia)
 
-process_collection("earthdayimagegallery", 'IMAGE')
+process_collection(COLLECTION_NAME, 'VIDEO')
