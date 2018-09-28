@@ -25,12 +25,15 @@ class InternetArchive:
         self.items = []
 
     def upload_collection(self):
+        self.save_items()
+        self.upload()
+    
+    def save_items(self):
         self.items = self.get_items()
         self.metadata = self.get_metadata()
         r = self.download_items()
         self.save_metadata()
-        self.upload()
-    
+        
     def get_items(self):
         self.logger.info("Searching the Internet Archive...")
         search = search_items(query='collection:' + self.collection_name, fields=["identifier"])
