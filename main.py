@@ -1,4 +1,5 @@
 from InternetArchive import *
 
-ia = InternetArchive("usgs_ri")
+collection_name = "usgs_ri"
+ia = InternetArchive(collection_name)
 ia.upload_collection()
