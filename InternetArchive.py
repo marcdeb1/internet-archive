@@ -1,5 +1,6 @@
 import logging
 import configparser as cp
+from tinydb import TinyDB, Query
 import string
 import json
 import os
@@ -7,6 +8,7 @@ import random
 from internetarchive import search_items, get_item, download
 import time
 from lbry_uploader import Uploader
+from slugify import slugify
 
 class InternetArchive:
     def __init__(self, collection_name, config_name="default"):
@@ -23,72 +25,59 @@ class InternetArchive:
         self.collection_name = collection_name
         self.metadata = []
         self.items = []
+        # Uploader
+        self.uploader = Uploader()
 
     def upload_collection(self):
-        self.save_items()
-        self.upload()
-    
-    def save_items(self):
-        self.items = self.get_items()
-        self.metadata = self.get_metadata()
-        r = self.download_items()
-        self.save_metadata()
+        self.get_items()
+        self.upload_items()
         
     def get_items(self):
         self.logger.info("Searching the Internet Archive...")
-        search = search_items(query='collection:' + self.collection_name, fields=["identifier"])
-        num_found = search.num_found
-        self.logger.info(str(num_found) + " items found in collection '" + str(self.collection_name) + "'.")
-        items = []
-        for s in search:
+        results = search_items(query='collection:' + self.collection_name, fields=["identifier"])
+        number_items = results.num_found
+        self.logger.info(str(number_items) + " items found in collection '" + str(self.collection_name) + "'.")
+        metadata = []
+        self.logger.info("Starting download...")
+        for i,s in enumerate(results):
             identifier = s.get("identifier")
             item = get_item(identifier)
-            items.append(item)
-        return items
-        
-    def get_metadata(self):
-        metadata = []
-        for item in self.items:
-            m = {}
-            m["name"] = self.get_name()
-            m["title"] = item.metadata.get("title")
-            m["description"] = item.metadata.get("description")
-            m["author"] = item.metadata.get("author")
-            m["language"] = item.metadata.get("language")
-            m["license_url"] = item.metadata.get("licenseurl")
-            m["license"] = item.metadata.get("rights")
-            m["metadata"] = item.metadata
-            m["identifier"] = item.metadata.get("identifier")
-            file_name = self.get_source_file(item)
-            if not file_name:
-                self.logger.warning("Could not find file for item '" + str(m.get('identifier')) + "'. Skipping item.")
+            m = self.get_metadata(item)
+            if not m:
                 continue
-            m["file_name"] = file_name
-            file_path = self.get_file_directory() + "/" + file_name
-            m["file_path"] = file_path.replace("/", "\\")
-            m["thumbnail"] = self.get_thumbnail_path(item)
-            m["preview"] = m["thumbnail"]
-            metadata.append(m)
-        return metadata
-
-    def download_items(self):
-        self.logger.info("Starting download...")
-        dest_dir = self.get_file_directory()
-        number_items = len(self.metadata)
-        for i,m in enumerate(self.metadata):
-            d = download(m.get('identifier'), files=[m.get('file_name')], destdir=dest_dir, silent=True, no_directory=True, retries=3)
+            r = self.download_item(m)
+            p = self.uploader.upload_claim(m)
             self.printProgressBar(i + 1, number_items)
         return True
+        
+    def get_metadata(self, item):
+        m = {}
+        m["name"] = self.get_name(item)
+        m["title"] = item.metadata.get("title")
+        m["description"] = item.metadata.get("description")
+        m["author"] = item.metadata.get("author")
+        m["language"] = item.metadata.get("language")
+        m["license_url"] = item.metadata.get("licenseurl")
+        m["license"] = item.metadata.get("rights")
+        m["metadata"] = item.metadata
+        m["identifier"] = item.metadata.get("identifier")
+        file_name = self.get_source_file(item)
+        if not file_name:
+            self.logger.warning("Could not find file for item '" + str(m.get('identifier')) + "'. Skipping item.")
+            return False
+        m["file_name"] = file_name
+        file_path = self.get_file_directory() + "/" + file_name
+        m["file_path"] = file_path.replace("/", "\\")
+        m["thumbnail"] = self.get_thumbnail_path(item)
+        m["preview"] = m["thumbnail"]
+        return m
 
-    def save_metadata(self):
-        dir = self.get_file_directory() + "/"
-        json_name = self.collection_name + '.json'
-        with open(dir + json_name, 'w') as f:
-            json.dump(self.metadata, f, ensure_ascii=False)
-        self.logger.info("Saved metadata for collection '" + str(self.collection_name) + "'.") 
-        return True
-    
-    def upload(self):
+    def download_item(self, metadata):
+        dest_dir = self.get_file_directory()
+        d = download(metadata.get('identifier'), files=[metadata.get('file_name')], destdir=dest_dir, silent=True, no_directory=True, retries=3,             ignore_existing=True, ignore_errors=True)
+        return d
+
+    def upload_items(self):
         input = self.get_file_directory() + "/" + self.collection_name + '.json'
         uploader = Uploader()
         r = uploader.upload(input)
@@ -121,11 +110,11 @@ class InternetArchive:
             return None
         return thumbnails[0]
         
-    def get_name(self):
+    def get_name(self, item):
         name = str()
         if self.settings["prefix"]:
             name += self.settings["prefix"] + '-'
-        name += self.random_string(self.settings["name_size"])
+        name += slugify(item.metadata.get('title'))
         return name
 
     def get_allowed_formats(self, item):
