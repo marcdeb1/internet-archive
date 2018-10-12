@@ -1,6 +1,5 @@
 import logging
 import configparser as cp
-from tinydb import TinyDB, Query
 import string
 import json
 import os
@@ -29,10 +28,6 @@ class InternetArchive:
         self.uploader = Uploader()
 
     def upload_collection(self):
-        self.get_items()
-        self.upload_items()
-        
-    def get_items(self):
         self.logger.info("Searching the Internet Archive...")
         results = search_items(query='collection:' + self.collection_name, fields=["identifier"])
         number_items = results.num_found
@@ -76,12 +71,6 @@ class InternetArchive:
         dest_dir = self.get_file_directory()
         d = download(metadata.get('identifier'), files=[metadata.get('file_name')], destdir=dest_dir, silent=True, no_directory=True, retries=3,             ignore_existing=True, ignore_errors=True)
         return d
-
-    def upload_items(self):
-        input = self.get_file_directory() + "/" + self.collection_name + '.json'
-        uploader = Uploader()
-        r = uploader.upload(input)
-        return r
     
     def get_source_file(self, item):
         file_name = ""
