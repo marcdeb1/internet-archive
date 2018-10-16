@@ -20,8 +20,7 @@ from lbry_internet_archive import InternetArchive
 uploader = InternetArchive(collection_name=collection_name, config_name=config) # config_name is optional
 uploader.upload_collection()
 ```
-
-The `upload_claim` function can also be used to upload one claim, and takes a dictionary as an argument.
+In the configuration file, it is possible to set a prefix for the claim names and the channel to publish the content to.
 
 Note: The config argument is optional. Default settings (default.ini file) will be used if not provided.
 
