@@ -18,7 +18,6 @@ class InternetArchive:
         self.config.read(settings_file)
         if 'MainConfig' in self.config:
             self.settings = self.config['MainConfig']
-            self.logger.info("Using '" + config_name + "' settings.")
         else:
             self.logger.error("Could not find settings file or MainConfig section.")
         self.collection_name = collection_name
@@ -42,16 +41,14 @@ class InternetArchive:
                 continue
             r = self.download_item(m)
             p = self.uploader.upload_claim(m)
-            self.printProgressBar(i + 1, number_items)
         return True
         
     def get_metadata(self, item):
         m = {}
         m["name"] = self.get_name(item)
         m["title"] = item.metadata.get("title")
-        m["description"] = item.metadata.get("description")
+        m["description"] = item.metadata.get("description") if item.metadata.get("description") else m["title"]
         m["author"] = item.metadata.get("author")
-        m["language"] = item.metadata.get("language")
         m["license_url"] = item.metadata.get("licenseurl")
         m["license"] = item.metadata.get("rights")
         m["metadata"] = item.metadata
@@ -107,13 +104,8 @@ class InternetArchive:
         return name
 
     def get_allowed_formats(self, item):
-        if item.metadata["mediatype"] == 'movies':
-            return self.settings["allowed_video_formats"]
-        elif item.metadata["mediatype"] == 'image':
-            return self.settings["allowed_image_formats"]
-        else:
-            return False
-       
+        return self.settings["allowed_video_formats"] + self.settings["allowed_image_formats"]
+        
     def getLogger(self):
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
