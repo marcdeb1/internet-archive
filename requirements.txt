@@ -20,4 +20,4 @@ schema==0.6.8
 six==1.11.0
 slugify==0.0.1
 tinydb==3.11.1
-urllib3==1.23
+urllib3==1.26.5
